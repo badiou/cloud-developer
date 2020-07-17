@@ -1,10 +1,11 @@
-
 import { TodoItem } from '../models/TodoItem'
 import { TodosAccess } from '../dataLayer/todosAccess'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { getUserId } from '../lambda/utils';
 import * as uuid from 'uuid'
 import { APIGatewayProxyEvent } from 'aws-lambda'
+import { UpdateTodoRequest } from '../requests/UpdateTodoRequest';
+
 
 const todosAccess= new TodosAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
@@ -13,11 +14,10 @@ const bucketName = process.env.TODOS_S3_BUCKET
 export async function getAllTodos(): Promise<TodoItem[]> {
     return todosAccess.getAllTodos()
   }
+
+
   
-  export async function createTodo(
-    createTodoRequest: CreateTodoRequest,
-    event: APIGatewayProxyEvent
-  ): Promise<TodoItem> {
+export async function createTodo(createTodoRequest: CreateTodoRequest,event: APIGatewayProxyEvent): Promise<TodoItem> {
   
     const itemId = uuid.v4()
     const userId = getUserId(event)
@@ -30,4 +30,40 @@ export async function getAllTodos(): Promise<TodoItem[]> {
         ...createTodoRequest
     })
   }
+
+  export async function deleteTodo(event: APIGatewayProxyEvent){
+      //get todoId from the parameters that user send to url
+    const todoId = event.pathParameters.todoId;
+    const validTodo=todosAccess.todoExists(todoId)
+    if (!validTodo){ // it means that the todo does not exist
+
+        return false}
+    else
+    {   await todosAccess.deleteTodo(todoId)
+        
+        return true}
+}
+
+export async function updateTodo(event: APIGatewayProxyEvent,updateTodoRequest: UpdateTodoRequest){
+    
+  const todoId = event.pathParameters.todoId;
+  const validTodo= todosAccess.todoExists(todoId)
   
+  if (!validTodo){ 
+
+      return false}
+  else
+  {   await todosAccess.updateTodo(todoId, updateTodoRequest)
+      
+      return true}
+}
+
+
+
+  
+
+
+
+
+ 
+ 

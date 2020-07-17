@@ -1,17 +1,46 @@
 service:
-  name: serverless-todo-app
+  name: badiou-serverless-todo-app
 
 plugins:
   - serverless-webpack
-  - serverless-iam-roles-per-function
+  - serverless-plugin-canary-deployments
+  - serverless-dynamodb-local
+  - serverless-offline
+    #npm i --save serverless-plugin-canary-deployments
+    #npm install --save serverless-dynamodb-local
+    #npm install serverless-offline --save-dev
+  #This plugin allows to restrict permissions for just one of your function npm i --save-dev serverless-roles-per-function
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs12.x
 
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
+  #Added for making tracing the log for lambda and apiGateway 
+  tracing:
+    lambda: true
+    apiGateway: true
 
+  environment:
+    TODOS_TABLE: Todos-${self:provider.stage}
+    TODOS_S3_BUCKET: badiou-serverless-todo-app-${self:provider.stage}
+    SIGNED_URL_EXPIRATION: 300
+
+  iamRoleStatements: #here i have assign a global iam role policies.
+    - Effect: Allow
+      Action:
+        #iamrole pour recupérer la liste des groupes depuis DynamoDB
+        - dynamodb:Scan
+        #iamrole pour utiliser Post vers une base de données DynamoDB
+        - dynamodb:PutItem
+        #iamrole pour utiliser faire un getItem
+        - dynamodb:GetItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+
+
+
+#List of the functions
 functions:
 
   Auth:
@@ -24,6 +53,8 @@ functions:
       - http:
           method: get
           path: todos
+          cors: true
+          authorizer: Auth
 
   # TODO: Configure this function
   GetTodos:
