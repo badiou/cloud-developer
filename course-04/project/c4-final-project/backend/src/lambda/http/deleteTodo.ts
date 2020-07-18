@@ -16,7 +16,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   } // end of if
   else{
     return{
-      statusCode: 404,
+      statusCode: 202,
     body: JSON.stringify({
       headers: {
         'Access-Control-Allow-Origin': '*',
