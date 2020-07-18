@@ -12,7 +12,7 @@ const urlExpiration = process.env.SIGNED_URL_EXPIRATION
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const todoId = event.pathParameters.todoId
-  const url= getUploadUrl(todoId)
+  const url=await  getUploadUrl(todoId)
 
   return {
     statusCode: 202,
