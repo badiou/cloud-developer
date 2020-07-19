@@ -5,7 +5,7 @@ import { deleteTodo } from '../../businessLogic/todos';
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
-  
+
   if (!(await deleteTodo(event))) {
     return {
       statusCode: 404,
@@ -20,6 +20,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': true
+      
     },
     body: JSON.stringify({})
   };
