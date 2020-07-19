@@ -11,6 +11,7 @@ const todoS3 = new TodoS3();
 
 const todosAccess= new TodosAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
+const signedUrlExpiration=process.env.SIGNED_URL_EXPIRATION
 
 
 export async function getAllTodos(): Promise<TodoItem[]> {
@@ -61,9 +62,9 @@ export async function updateTodo(event: APIGatewayProxyEvent,updateTodoRequest: 
 }
 
 export async function generateUploadUrl(event: APIGatewayProxyEvent) {
-    const bucket = bucketName;
-    const urlExpiration = process.env.SIGNED_URL_EXPIRATION;
-    const todoId = event.pathParameters.todoId;
+    const bucket = bucketName
+    const urlExpiration = signedUrlExpiration
+    const todoId = event.pathParameters.todoId
 
     const SignedUrlRequest = {
         Bucket: bucket,
