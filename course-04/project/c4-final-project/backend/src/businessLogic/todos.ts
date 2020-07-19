@@ -1,11 +1,13 @@
 import { TodoItem } from '../models/TodoItem'
 import { TodosAccess } from '../dataLayer/todosAccess'
+import TodoS3 from '../dataLayer/todoS3';
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { getUserId } from '../lambda/utils';
 import * as uuid from 'uuid'
 import { APIGatewayProxyEvent } from 'aws-lambda'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest';
 
+const todoS3 = new TodoS3();
 
 const todosAccess= new TodosAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
@@ -56,6 +58,20 @@ export async function updateTodo(event: APIGatewayProxyEvent,updateTodoRequest: 
   {   await todosAccess.updateTodo(todoId, updateTodoRequest)
       
       return true}
+}
+
+export async function generateUploadUrl(event: APIGatewayProxyEvent) {
+    const bucket = bucketName;
+    const urlExpiration = process.env.SIGNED_URL_EXPIRATION;
+    const todoId = event.pathParameters.todoId;
+
+    const SignedUrlRequest = {
+        Bucket: bucket,
+        Key: todoId,
+        Expires: urlExpiration
+    }
+
+    return todoS3.getPresignedUploadURL(SignedUrlRequest);
 }
 
 
