@@ -33,21 +33,23 @@ async createTodo(todo: TodoItem): Promise<TodoItem> {
   }
 
 // this fucntion allows to delete todo in database. 
-async deleteTodo(todoId: string) {
-    await this.docClient.delete({
-        TableName: this.todosTable,
-        Key: {
-            todoId
-        }
-    }).promise();
-    }
+async deleteTodo(todoId, userId) {
+  await this.docClient.delete({
+      TableName: this.todosTable,
+      Key: {
+          todoId,
+          userId
+      }
+  }).promise();
+}
 
 // this function allow user to update todo in database.
-async updateTodo(todoId:string, updatedTodo){
+async updateTodo(todoId:string, userId,updatedTodo){
     await this.docClient.update({
         TableName: this.todosTable,
         Key: {
-            todoId
+            todoId,
+            userId
         },
         UpdateExpression: 'set #name = :name, #dueDate = :dueDate, #done = :done',
           ExpressionAttributeValues: {
@@ -65,12 +67,14 @@ async updateTodo(todoId:string, updatedTodo){
 
 
 // This function check just if the todo exists in the database and return true if it's exist and false if not
-async  todoExists(todoId) {
+async  todoExists(todoId, userId) {
     const result = await this.docClient
       .get({
         TableName: this.todosTable,
         Key: {
-          id: todoId
+          todoId,
+          userId
+
         }
       })
       .promise()
