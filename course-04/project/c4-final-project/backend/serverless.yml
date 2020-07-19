@@ -18,10 +18,18 @@ provider:
 
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
-  # #Added for making tracing the log for lambda and apiGateway 
-  # tracing:
-  #   lambda: true
-  #   apiGateway: true
+  
+  # enable AWS X-Ray Tracing
+  tracing:
+    lambda: true
+    apiGateway: true
+    iamRoleStatements:
+      - Effect: 'Allow' # xray permissions (required)
+        Action:
+          - 'xray:PutTraceSegments'
+          - 'xray:PutTelemetryRecords'
+        Resource:
+          - '*'
 
   environment:
     TODOS_TABLE: Todos-${self:provider.stage}

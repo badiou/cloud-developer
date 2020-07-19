@@ -4,6 +4,7 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { TodoItem } from '../models/TodoItem'
 const XAWS = AWSXRay.captureAWS(AWS)
 
+
 export class TodosAccess {
 
   constructor(
@@ -88,6 +89,7 @@ async  todoExists(todoId, userId) {
 
 function createDynamoDBClient() {
   if (process.env.IS_OFFLINE) {
+   
     console.log('Creating a local DynamoDB instance')
     return new XAWS.DynamoDB.DocumentClient({
       region: 'localhost',
