@@ -54,14 +54,14 @@ export async function updateTodo(event: APIGatewayProxyEvent,updateTodoRequest: 
     
   const todoId = event.pathParameters.todoId;
   const userId = getUserId(event);
-  const validTodo= await todosAccess.todoExists(todoId, userId)
+  const validTodo= await todosAccess.todoExists(todoId,userId)
   
   
   if (!validTodo){ 
 
       return false}
   else
-  {   await todosAccess.updateTodo(todoId, userId,updateTodoRequest)
+  {   await todosAccess.updateTodo(todoId, userId, updateTodoRequest)
       
       return true}
 }
