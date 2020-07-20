@@ -64,7 +64,8 @@ async updateTodo(todoId:string, userId, updatedTodo){
               '#name': 'name',
               '#dueDate': 'dueDate',
               '#done': 'done'
-          }
+          },
+          ReturnValues:"UPDATED_NEW"
       }).promise();
 }
 
