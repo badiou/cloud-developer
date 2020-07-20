@@ -37,13 +37,12 @@ export async function createTodo(createTodoRequest: CreateTodoRequest,event: API
     })
   }
 
-  
   export async function deleteTodo(event: APIGatewayProxyEvent){
       //get todoId from the parameters that user send to url
     const todoId = event.pathParameters.todoId;
-    const userId = getUserId(event);
+     //get user by id
+  const userId = getUserId(event);
     const validTodo=todosAccess.todoExists(todoId,userId)
-    
     if (!validTodo){ // it means that the todo does not exist
 
         return false}
@@ -56,9 +55,9 @@ export async function createTodo(createTodoRequest: CreateTodoRequest,event: API
 export async function updateTodo(event: APIGatewayProxyEvent,updateTodoRequest: UpdateTodoRequest){
     
   const todoId = event.pathParameters.todoId;
+  //get user by id
   const userId = getUserId(event);
-  const validTodo= await todosAccess.todoExists(todoId,userId)
-  
+  const validTodo= todosAccess.todoExists(todoId,userId)
   
   if (!validTodo){ 
 
@@ -84,7 +83,7 @@ export async function generateUploadUrl(event: APIGatewayProxyEvent) {
         Expires: urlExpiration
     })
 
-    //return todoS3.getPresignedUploadURL(SignedUrlRequest);
+    
 }
 
 
