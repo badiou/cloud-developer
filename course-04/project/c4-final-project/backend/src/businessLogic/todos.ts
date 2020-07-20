@@ -10,17 +10,20 @@ const XAWS = AWSXRay.captureAWS(AWS);
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest';
 import * as AWSXRay from 'aws-xray-sdk';
 
-//const todoS3 = new TodoS3();
+import TodoS3 from '../dataLayer/todoS3';
+
+const todoS3 = new TodoS3();
 
 const todosAccess= new TodosAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
 const signedUrlExpiration=process.env.SIGNED_URL_EXPIRATION
 
 
-export async function getAllTodos(): Promise<TodoItem[]> {
-    return todosAccess.getAllTodos()
-  }
+export async function getAllTodos(event: APIGatewayProxyEvent) {
+  const userId = getUserId(event);
 
+  return await todosAccess.getAllTodos(userId);
+}
 
   
 export async function createTodo(createTodoRequest: CreateTodoRequest,event: APIGatewayProxyEvent): Promise<TodoItem> {
@@ -82,6 +85,7 @@ export async function generateUploadUrl(event: APIGatewayProxyEvent) {
         Key: todoId,
         Expires: urlExpiration
     })
+    return todoS3.getPresignedUploadURL(SignedUrlRequest);
 
     
 }

@@ -9,20 +9,24 @@ export class TodosAccess {
 
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todosTable = process.env.TODOS_TABLE) {
-  }
+    private readonly indexName = process.env.INDEX_NAME,
+    private readonly todosTable = process.env.TODOS_TABLE
+){}
 
   // This function is used to get all todos from DymanoDB. This function will be used in http/getTodos.ts
-  async getAllTodos(): Promise<TodoItem[]> {
-    console.log('Getting all todos')
+  async getAllTodos(userId) {
+      const result = await this.docClient.query({
+          TableName: this.todosTable,
+          IndexName: this.indexName,
+          KeyConditionExpression: 'userId = :userId',
+          ExpressionAttributeValues: {
+              ':userId': userId
+          }
+      }).promise();
 
-    const result = await this.docClient.scan({
-      TableName: this.todosTable
-    }).promise()
-
-    const items = result.Items
-    return items as TodoItem[]
+      return result.Items;
   }
+
 
   // this function allows to create a todo in DynamoDB. This function will be used in http/createTodo.ts
 async createTodo(todo: TodoItem): Promise<TodoItem> {

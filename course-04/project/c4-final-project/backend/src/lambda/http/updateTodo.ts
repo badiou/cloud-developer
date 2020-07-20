@@ -8,8 +8,8 @@ import { updateTodo } from '../../businessLogic/todos';
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
  
   const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
-  const myupdateTodo = await updateTodo(event, updatedTodo);
-  if (!myupdateTodo) {
+  
+  if (!await updateTodo(event, updatedTodo)) {
     return {
       statusCode: 404,
       body: JSON.stringify({
