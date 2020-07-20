@@ -19,12 +19,17 @@ const bucketName = process.env.TODOS_S3_BUCKET
 const signedUrlExpiration=process.env.SIGNED_URL_EXPIRATION
 
 
-export async function getTodos(event: APIGatewayProxyEvent) {
-  const userId = getUserId(event);
 
-  return await todosAccess.getAllTodos(userId);
+// export async function getTodos(event: APIGatewayProxyEvent) {
+//   const userId = getUserId(event);
+
+//   return await todosAccess.getAllTodos(userId);
+// }
+export async function getAllTodos(): Promise<TodoItem[]> {
+  //const userId = getUserId(event);
+
+  return todosAccess.getAllTodos()
 }
-  
 export async function createTodo(createTodoRequest: CreateTodoRequest,event: APIGatewayProxyEvent): Promise<TodoItem> {
   
     const itemId = uuid.v4()
