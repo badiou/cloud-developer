@@ -1,13 +1,16 @@
 import { TodoItem } from '../models/TodoItem'
 import { TodosAccess } from '../dataLayer/todosAccess'
-import TodoS3 from '../dataLayer/todoS3';
+//import TodoS3 from '../dataLayer/todoS3';
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { getUserId } from '../lambda/utils';
 import * as uuid from 'uuid'
 import { APIGatewayProxyEvent } from 'aws-lambda'
+import * as AWS from "aws-sdk";
+const XAWS = AWSXRay.captureAWS(AWS);
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest';
+import * as AWSXRay from 'aws-xray-sdk';
 
-const todoS3 = new TodoS3();
+//const todoS3 = new TodoS3();
 
 const todosAccess= new TodosAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
@@ -67,17 +70,21 @@ export async function updateTodo(event: APIGatewayProxyEvent,updateTodoRequest: 
 }
 
 export async function generateUploadUrl(event: APIGatewayProxyEvent) {
-    const bucket = bucketName
+    
     const urlExpiration = signedUrlExpiration
     const todoId = event.pathParameters.todoId
 
-    const SignedUrlRequest = {
-        Bucket: bucket,
+    const s3 = new XAWS.S3({
+        signatureVersion: "v4"
+    });
+
+    return s3.getSignedUrl('putObject', {
+        Bucket: bucketName,
         Key: todoId,
         Expires: urlExpiration
-    }
+    })
 
-    return todoS3.getPresignedUploadURL(SignedUrlRequest);
+    //return todoS3.getPresignedUploadURL(SignedUrlRequest);
 }
 
 

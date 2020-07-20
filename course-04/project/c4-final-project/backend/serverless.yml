@@ -38,6 +38,20 @@ provider:
     USER_ID: UserId
 
 
+  #Allow to validate createTodo
+custom:
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Udagram API
+        description: Serverless application for images sharing
+    models:
+      - name: GroupRequest
+        contentType: application/json
+        schema: ${file(models/create-todo-request.json)}
+
+
 #List of the functions
 functions:
 
@@ -58,7 +72,6 @@ functions:
         Action:
           - dynamodb:Scan
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-
   # TODO: Configure this function
  
   CreateTodo:
@@ -79,6 +92,12 @@ functions:
         Action:
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      # - Effect: Allow
+      #   Action:
+      #     - "xray:PutTraceSegments"
+      #     - "xray:PutTelemetryRecords"
+      #   Resource:
+      #     - "*"
 
   # TODO: Configure this function
   UpdateTodo:
@@ -94,6 +113,12 @@ functions:
           - dynamodb:UpdateItem
           - dynamodb:GetItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      # - Effect: Allow
+      #   Action:
+      #     - "xray:PutTraceSegments"
+      #     - "xray:PutTelemetryRecords"
+      #   Resource:
+      #     - "*"
 
   # TODO: Configure this function
   DeleteTodo:
@@ -109,6 +134,12 @@ functions:
           - dynamodb:DeleteItem
           - dynamodb:GetItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      # - Effect: Allow
+      #   Action:
+      #     - "xray:PutTraceSegments"
+      #     - "xray:PutTelemetryRecords"
+      #   Resource:
+      #     - "*"
 
   # TODO: Configure this function
   GenerateUploadUrl:
@@ -118,25 +149,24 @@ functions:
           method: post
           path: todos/{todoId}/attachment
           cors: true
+          authorizer: Auth
     iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - s3:PutObject
-          - s3:GetObject
-        Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
-
-    #Allow to validate createTodo
-custom:
-  documentation:
-    api:
-      info:
-        version: v1.0.0
-        title: Udagram API
-        description: Serverless application for images sharing
-    models:
-      - name: GroupRequest
-        contentType: application/json
-        schema: ${file(models/create-todo-request.json)}
+    - Effect: Allow
+      Action:
+        - dynamodb:UpdateItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+    - Effect: Allow
+      Action:
+      - s3:PutObject
+      - s3:GetObject
+      Resource: arn:aws:s3:::${self:provider.environment.TODOS_S3_BUCKET}/*
+    - Effect: Allow
+      Action:
+        - "xray:PutTraceSegments"
+        - "xray:PutTelemetryRecords"
+      Resource:
+        - "*"
+  
   
 resources:
   Resources:
