@@ -14,7 +14,6 @@ const todosAccess= new TodosAccess()
 const bucketName = process.env.TODOS_S3_BUCKET
 
 export async function getAllTodos(): Promise<TodoItem[]> {
-  //const userId = getUserId(event);
 
   return todosAccess.getAllTodos()
 }
