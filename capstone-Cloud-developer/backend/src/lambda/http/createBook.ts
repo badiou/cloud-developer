@@ -56,12 +56,12 @@ export const handler= middy(async (event: APIGatewayProxyEvent): Promise<APIGate
   }
 })
 
-async function categorieExists(groupId: string) {
+async function categorieExists(categorieId: string) {
   const result = await docClient
     .get({
       TableName: categoriesTable,
       Key: {
-        id: groupId
+        id: categorieId
       }
     })
     .promise()
@@ -71,7 +71,7 @@ async function categorieExists(groupId: string) {
 }
 
 async function createBook(categorieId: string, bookId: string, event: any) {
-  //const timestamp = new Date().toISOString()
+
   const newBook = JSON.parse(event.body)
 
   const newItem = {
