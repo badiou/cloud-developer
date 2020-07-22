@@ -270,7 +270,7 @@ resources:
           - AttributeName: bookId
             AttributeType: S
           - AttributeName: price
-            AttributeType: N
+            AttributeType: S
           - AttributeName: author
             AttributeType: S
         KeySchema:

@@ -11,12 +11,10 @@
       },
       "price": {
         "type": "integer"
-      }  
+      }
     },
     "required": [
-      "title",
-      "author",
-      "price"
+      "title"
     ],
     "additionalProperties": false
 }
