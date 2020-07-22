@@ -14,7 +14,7 @@ const s3= new AWS.S3({
   signatureVersion: 'v4'
 })
 
-const categoriesTable = process.env.CATEGORIES_TABLES
+const categoriesTable = process.env.CATEGORIES_TABLE
 const booksTable = process.env.BOOKS_TABLE
 
 const bucketName = process.env.BOOKS_S3_BUCKET

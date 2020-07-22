@@ -2,7 +2,7 @@ import * as uuid from 'uuid'
 
 import { Categorie } from '../models/Categorie'
 import { CategoriesAccess } from '../dataLayer/categoriesAccess'
-import { CreateCategoriesRequest } from '../requests/CreateCategoriesRequest'
+import { CreateCategorieRequest } from '../requests/CreateCategorieRequest'
 import { getUserId } from '../auth/utils'
 
 const categorieAccess = new CategoriesAccess()
@@ -12,7 +12,7 @@ export async function getAllCategories(): Promise<Categorie[]> {
 }
 
 export async function createCategorie(
-    createCategoriesRequest: CreateCategoriesRequest,
+    createCategoriesRequest: CreateCategorieRequest,
   jwtToken: string
 ): Promise<Categorie> {
 

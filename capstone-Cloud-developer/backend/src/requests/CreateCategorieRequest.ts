@@ -1,4 +1,4 @@
-export interface CreateCategoriesRequest{
+export interface CreateCategorieRequest{
     name: string
     description: string
 }
