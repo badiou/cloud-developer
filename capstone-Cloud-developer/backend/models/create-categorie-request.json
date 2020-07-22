@@ -3,16 +3,16 @@
     "title": "my-type",
     "type": "object",
     "properties": {
-      "name_categorie": {
+      "name": {
         "type": "string"
       },
-      "description_categorie": {
+      "description": {
         "type": "string"
       }
     },
     "required": [
-        "name_categorie",
-        "description_categorie"
+        "name",
+        "description"
     ],
     "additionalProperties": false
   }

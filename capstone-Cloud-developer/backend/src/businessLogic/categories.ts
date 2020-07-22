@@ -21,7 +21,7 @@ export async function createCategorie(
   return await categorieAccess.createCategorie({
     id: itemId,
     userId: userId,
-    name_categorie: createCategoriesRequest.name_categorie,
-    description_categorie: createCategoriesRequest.description_categorie
+    name: createCategoriesRequest.name,
+    description: createCategoriesRequest.description
   })
 }
