@@ -55,7 +55,7 @@ provider:
   
 #custom est utilisé pour la validation des données avant l'envoi au serveur pour utiliser la fonction lambda
 custom:
-  topicName: imagesTopic-${self:provider.stage}
+  topicName: booksTopic-${self:provider.stage}
   documentation:
     api:
       info:
@@ -124,17 +124,16 @@ functions:
       - http:
           method: get
           path: categories/{categorieId}/books
-          cors: true
-          
+          cors: true   
     iamRoleStatements:
       - Effect: Allow
-      Action:
-        - dynamodb:Scan
-        - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}/index/${self:provider.environment.BOOK_ID_INDEX}
+        Action:
+          - dynamodb:Scan
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}/index/${self:provider.environment.BOOK_ID_INDEX}
       - Effect: Allow
-      Action:
-        - dynamodb:Query
+        Action:
+          - dynamodb:Query
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}
     
 #fonction pour créer une Book
@@ -145,8 +144,6 @@ functions:
           method: post
           path: categories/{categorieId}/books
           cors: true
-          # this allow to do Authorization by token
-           #authorizer: Auth ici on utilise HS256
           authorizer: RS256Auth #ici on utilise RS256 avec le fichier rs256Auth0Authorizer et la focntion déclarée dans ce fichier
           reqValidatorName: RequestBodyValidator
           documentation:
@@ -156,15 +153,15 @@ functions:
               'application/json': BookRequest #the same name like custom models
     iamRoleStatements:
       - Effect: Allow
-      Action:
-        - dynamodb:PutItem
-        - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}/index/${self:provider.environment.BOOK_ID_INDEX}
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}/index/${self:provider.environment.BOOK_ID_INDEX}
       - Effect: Allow 
-      Action:
-        - s3:PutObject
-        - s3:GetObject
-      Resource: 'arn:aws:s3:::${self:provider.environment.BOOKS_S3_BUCKET}/*'
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: 'arn:aws:s3:::${self:provider.environment.BOOKS_S3_BUCKET}/*'
     
  
 # fonction pour recupérer une Book
@@ -177,9 +174,9 @@ functions:
           cors: true
     iamRoleStatements:
       - Effect: Allow
-      Action:
-        - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.IMAGES_TABLE}/index/${self:provider.environment.IMAGE_ID_INDEX}
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}/index/${self:provider.environment.BOOK_ID_INDEX}
 
 resources:
   Resources:
@@ -215,6 +212,10 @@ resources:
           - AttributeName: categorieId
             AttributeType: S
           - AttributeName: bookId
+            AttributeType: S
+          - AttributeName: price
+            AttributeType: N
+          - AttributeName: author
             AttributeType: S
         KeySchema:
           - AttributeName: categorieId
