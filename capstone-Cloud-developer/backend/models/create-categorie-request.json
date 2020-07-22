@@ -1,0 +1,18 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "my-type",
+    "type": "object",
+    "properties": {
+      "name_categorie": {
+        "type": "string"
+      },
+      "description_categorie": {
+        "type": "string"
+      }
+    },
+    "required": [
+        "name_categorie",
+        "description_categorie"
+    ],
+    "additionalProperties": false
+  }

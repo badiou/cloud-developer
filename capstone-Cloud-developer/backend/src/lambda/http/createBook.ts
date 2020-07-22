@@ -78,7 +78,7 @@ async function createBook(categorieId: string, bookId: string, event: any) {
     categorieId,
     bookId,
     ...newBook,
-    imageUrl: `https://${bucketName}.s3.amazonaws.com/${imageId}`
+    bookUrl: `https://${bucketName}.s3.amazonaws.com/${bookId}`
   }
   console.log('Storing new item: ', newItem)
 

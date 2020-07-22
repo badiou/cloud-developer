@@ -1,63 +1,411 @@
 service:
-  name: serverless-todo-app
-
+  name: serverless-book-shop
 plugins:
   - serverless-webpack
+  #les 2 plugins ajoutés ici servent à faire la validation en utilisant les fchiers dans le modele.
+  #il faut installer ses plugin en utilisant les commandes npm install serverless-aws-documentation serverless-reqvalidator-plugin --save-dev
+  - serverless-reqvalidator-plugin #npm install serverless-reqvalidator-plugin
+  - serverless-aws-documentation #npm install serverless-aws-documentation
+  #Optimzation if our lambda function
+  - serverless-plugin-canary-deployments
+  - serverless-dynamodb-local
+  - serverless-offline
   - serverless-iam-roles-per-function
+    #npm i --save serverless-plugin-canary-deployments
+    #npm install --save serverless-dynamodb-local
+    #npm install serverless-offline --save-dev
+  #This plugin allows to restrict permissions for just one of your function npm i --save-dev serverless-roles-per-function
+
+  
+#Added for lambda optimzation
+package:
+  individually: true
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs12.x
 
+# ici on fournit les stages qui peuvent etre dev, prod etc... Ici dev est utilisé par defaut quand on ne fournit pas d'autres stages..
+#la region aussi peut etre forunie sinon on va déplyer dans la région par defaut us-east-1
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-east-1'}
 
-functions:
+#Added for making tracing the log for lambda and apiGateway 
+  tracing:
+    lambda: true
+    apiGateway: true
 
+#definition des variables d'environnements (nom de la table est fournit comme variable d'environnement)
+  environment:
+    CATEGORIES_TABLE: Categories-${self:provider.stage}
+   BOOKS_TABLE: Books-${self:provider.stage}
+  
+    BOOK_ID_INDEX: BookIdIndex
+   
+    BOOKS_S3_BUCKET: serverless-cloud-udagram-books-ourobadiou-${self:provider.stage}
+   
+    SIGNED_URL_EXPIRATION: 300
+    CONNECTIONS_TABLE: Connections-${self:provider.stage}
+
+    #Cette variable est copiée depuis Auth0 au niveau de l'application qui a été créée (Client secret)
+    #It's not a good idea to store the secret to app env variable. We can store it in SSM Parameter Store or AWS Secrets Manager
+    #AUTH_0_SECRET: 
+    # Nous allons ajouter 2 autres variables pour stocker les parematres secrets
+    AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
+    AUTH_0_SECRET_FIELD: auth0Secret
+  
+  #il faut aussi donner les permissions iam qui vont permettre d'interagir avec la base de données Scan 
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        #iamrole pour recupérer la liste des groupes depuis DynamoDB
+        - dynamodb:Scan
+        #iamrole pour utiliser Post vers une base de données DynamoDB
+        - dynamodb:PutItem
+        #iamrole pour utiliser faire un getItem
+        - dynamodb:GetItem
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CATEGORIES_TABLE}
+
+    - Effect: Allow 
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:Query
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}
+
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.BOOKS_TABLE}/index/${self:provider.environment.BOOK_ID_INDEX}
+    
+
+    - Effect: Allow 
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+      Resource: 'arn:aws:s3:::${self:provider.environment.BOOKS_S3_BUCKET}/*'
+    
+    - Effect: Allow
+      Action:
+        - dynamodb:Scan
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}
+
+#This is the policy to allow to store Auth0Secret to AWS
+    - Effect: Allow
+      Action:
+        - secretsmanager:GetSecretValue
+      Resource: !Ref Auth0Secret #Allow to read de secret value from new Auth0 resource
+    - Effect: Allow #Allow to decrypt 
+      Action:
+        - kms:Decrypt
+      Resource: !GetAtt KMSKey.Arn
+    
+#custom est utilisé pour la validation des données avant l'envoi au serveur pour utiliser la fonction lambda
+custom:
+  topicName: booksTopic-${self:provider.stage}
+  ###########offline
+  serverless-offline:
+    port: 3003
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+  ##############offline
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Udagram API
+        description: Serverless application for books corver sharing
+    models:
+      - name: categorieRequest
+        contentType: application/json
+        schema: ${file(models/create-categorie-request.json)}
+      - name: BookRequest
+        contentType: application/json
+        schema: ${file(models/create-book-request.json)}
+
+
+#Définition de la liste de toutes les fonctions
+
+# fonction pour recupérer la liste des groupes
+functions:
+  #Appel de la fonction lambda auth0Authorizer
   Auth:
     handler: src/lambda/auth/auth0Authorizer.handler
 
-  # TODO: Configure this function
-  GetTodos:
-    handler: src/lambda/http/getTodos.handler
+
+  RS256Auth:
+    handler: src/lambda/auth/rs256Auth0Authorizer.handler
+
+  GetCategories:
+    handler: src/lambda/http/getCategories.handler
     events:
       - http:
           method: get
-          path: todos
+          path: categories
+          cors: true
 
-  # TODO: Configure this function
-  GetTodos:
-  CreateTodo:
-    handler: src/lambda/http/createTodo.handler
+# fonction pour créer un groupe
+  CreateCategorie:
+    handler: src/lambda/http/createCategorie.handler
     events:
       - http:
           method: post
-          path: todos
+          path: categories
+          cors: true
+          # this allow to do Authorization by token
+          #authorizer: Auth ici on utilise HS256
+          authorizer: RS256Auth #ici on utilise RS256 avec le fichier rs256Auth0Authorizer et la focntion déclarée dans ce fichier
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create a new categorie
+            description: Create a new categorie
+            requestModels:
+              'application/json': CategorieRequest #the same name like custom models
 
-  # TODO: Configure this function
-  UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
+# fonction pour recupérer liste des books par group en passant en categories/1/books(c'est la liste des Books de la Categorie 1)
+  GetBooks:
+    handler: src/lambda/http/getBooks.handler
     events:
       - http:
-          method: patch
-          path: todos/{todoId}
-
-  # TODO: Configure this function
-  DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
-    events:
-      - http:
-          method: delete
-          path: todos/{todoId}
-
-  # TODO: Configure this function
-  GenerateUploadUrl:
-    handler: src/lambda/http/generateUploadUrl.handler
+          method: get
+          path: books/{categorieId}/books
+          cors: true
+#fonction pour créer une Book
+  CreateBook:
+    handler: src/lambda/http/createBook.handler
     events:
       - http:
           method: post
-          path: todos/{todoId}/attachment
+          path: categories/{categorieId}/books
+          cors: true
+          # this allow to do Authorization by token
+           #authorizer: Auth ici on utilise HS256
+          authorizer: RS256Auth #ici on utilise RS256 avec le fichier rs256Auth0Authorizer et la focntion déclarée dans ce fichier
+          reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create a new books
+            description: Create a new books
+            requestModels:
+              'application/json': BookRequest #the same name like custom models
+    
+# Nouvelle fonction pour la notification au S3 bucket
+  SendUploadNotifications:
+    environment:
+      STAGE: ${self:provider.stage}
+      API_ID:
+        Ref: WebsocketsApi
+    handler: src/lambda/s3/sendNotifications.handler
+    events:
+      - sns:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn:aws:sns
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.topicName}
+          topicName: ${self:custom.topicName}
+
+
+  ConnectHandler:
+    handler: src/lambda/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  DisconnectHandler:
+    handler: src/lambda/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+
+# fonction pour recupérer une Book
+  GetBook:
+    handler: src/lambda/http/getBook.handler
+    events:
+      - http:
+          method: get
+          path: books/{bookId}
+          cors: true
+
+
 
 resources:
   Resources:
-    # TODO: Add any necessary AWS resources
+    #ressource to make authorization
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+    ####################################################""
+    CategoriesDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.CATEGORIES_TABLE}
+
+
+    BooksDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: categorieId
+            AttributeType: S
+          - AttributeName: bookId
+            AttributeType: S
+          - AttributeName: price
+            AttributeType: S
+          - AttributeName: author
+          AttributeType: S
+        KeySchema:
+          - AttributeName: categorieId
+            KeyType: HASH
+          # - AttributeName: timestamp
+          #   KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.BOOK_ID_INDEX} 
+            KeySchema:
+            - AttributeName: bookId
+              KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.BOOKS_TABLE}
+    
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      DependsOn: SNSTopicPolicy
+      Properties:
+        BucketName: ${self:provider.environment.BOOKS_S3_BUCKET}
+        # On cré ici un évenement au niveau du bucket qui va venir lancer la fonction lambda. ObjectCreated (ie au moment de la création de l'objet)
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:Put
+              Topic: !Ref BooksTopic
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+
+    #ici on donne des permissions au S3 bucket pour invoquer la fonction lambda          
+    SendUploadNotificationsPermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: !Ref SendUploadNotificationsLambdaFunction
+        Principal: s3.amazonaws.com
+        Action: lambda:InvokeFunction
+        SourceAccount: !Ref AWS::AccountId
+        SourceArn: arn:aws:s3:::${self:provider.environment.BOOKS_S3_BUCKET}   
+    
+        
+  ###########################################################
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.BOOKS_S3_BUCKET}/*'
+        Bucket: !Ref AttachmentsBucket
+    ########################################################
+    # this allow S3 to send event du Topic
+    SNSTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: sns:Publish
+              Resource:
+                !Ref BooksTopic
+              Condition:
+                ArnLike:
+                  AWS:SourceArn: arn:aws:s3:::${self:provider.environment.BOOKS_S3_BUCKET}
+        Topics:
+          - !Ref BooksTopic
+
+
+    BooksTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: Book bucket topic
+        TopicName: ${self:custom.topicName}
+
+    #il faut aussi ajouter le KSM Key qui est utiliser pour stocker le secret Auth dans les variables d'environnement de aws
+    KMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: KMS key to encrypt Auth0 secret  #encrypt secret
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: key-default-1
+          Statement:
+            - Sid: Allow administration of the key
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                  - ':'
+                  - - 'arn:aws:iam:'
+                    - Ref: AWS::AccountId
+                    - 'root'
+              Action:
+                - 'kms:*'
+              Resource: '*'
+
+    KMSKeyAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/auth0Key-${self:provider.stage}
+        TargetKeyId: !Ref KMSKey
+
+    Auth0Secret:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: ${self:provider.environment.AUTH_0_SECRET_ID}
+        Description: Auth0 secret
+        KmsKeyId: !Ref KMSKey
+        ############################################################ Fin SecretAuth0 to aws
