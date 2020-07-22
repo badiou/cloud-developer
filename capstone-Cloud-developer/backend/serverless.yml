@@ -58,7 +58,7 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
-        #iamrole pour recupérer la liste des groupes depuis DynamoDB
+        #iamrole pour recupérer la liste des categories depuis DynamoDB
         - dynamodb:Scan
         #iamrole pour utiliser Post vers une base de données DynamoDB
         - dynamodb:PutItem
@@ -130,7 +130,7 @@ custom:
 
 #Définition de la liste de toutes les fonctions
 
-# fonction pour recupérer la liste des groupes
+# fonction pour recupérer la liste des categories
 functions:
   #Appel de la fonction lambda auth0Authorizer
   Auth:
@@ -148,7 +148,7 @@ functions:
           path: categories
           cors: true
 
-# fonction pour créer un groupe
+# fonction pour créer un categorie
   CreateCategorie:
     handler: src/lambda/http/createCategorie.handler
     events:
@@ -166,7 +166,7 @@ functions:
             requestModels:
               'application/json': CategorieRequest #the same name like custom models
 
-# fonction pour recupérer liste des books par group en passant en categories/1/books(c'est la liste des Books de la Categorie 1)
+# fonction pour recupérer liste des books par categorie en passant en categories/1/books(c'est la liste des Books de la Categorie 1)
   GetBooks:
     handler: src/lambda/http/getBooks.handler
     events:
