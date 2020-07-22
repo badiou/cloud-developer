@@ -38,7 +38,7 @@ provider:
 #definition des variables d'environnements (nom de la table est fournit comme variable d'environnement)
   environment:
     CATEGORIES_TABLE: Categories-${self:provider.stage}
-   BOOKS_TABLE: Books-${self:provider.stage}
+    BOOKS_TABLE: Books-${self:provider.stage}
   
     BOOK_ID_INDEX: BookIdIndex
    
