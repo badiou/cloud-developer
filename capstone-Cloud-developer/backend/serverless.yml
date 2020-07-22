@@ -272,7 +272,7 @@ resources:
           - AttributeName: price
             AttributeType: S
           - AttributeName: author
-          AttributeType: S
+            AttributeType: S
         KeySchema:
           - AttributeName: categorieId
             KeyType: HASH
